@@ -1,6 +1,9 @@
 package com.example.movieticket.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "shows")
@@ -13,10 +16,13 @@ public class Show {
     private String movieName;
     private int totalSeats;
     private int availableSeats;
+    private String showTime;
 
-    private String showTime; // optional: store as String or LocalDateTime
+    @OneToMany(mappedBy = "show", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @JsonManagedReference
+    private List<Seat> seats = new ArrayList<>();
 
-    // Getters & Setters
+
     public Long getId() { return id; }
 
     public String getMovieName() { return movieName; }
@@ -30,4 +36,7 @@ public class Show {
 
     public String getShowTime() { return showTime; }
     public void setShowTime(String showTime) { this.showTime = showTime; }
+
+    public List<Seat> getSeats() { return seats; }
+    public void setSeats(List<Seat> seats) { this.seats = seats; }
 }

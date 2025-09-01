@@ -3,45 +3,54 @@ package com.example.movieticket.controller;
 import com.example.movieticket.dto.BookingRequest;
 import com.example.movieticket.model.Booking;
 import com.example.movieticket.service.BookingService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/bookings")
+@CrossOrigin(origins = "*")
 public class BookingController {
 
-    @Autowired
-    private BookingService bookingService;
+    private final BookingService bookingService;
 
-    // Book a show
+    public BookingController(BookingService bookingService) {
+        this.bookingService = bookingService;
+    }
+
+    // ✅ Create booking
     @PostMapping
-    public ResponseEntity<?> bookShow(@RequestBody BookingRequest request) {
+    public ResponseEntity<?> createBooking(@RequestBody BookingRequest request) {
         try {
-            Booking booking = bookingService.bookShow(request.getUserId(), request.getShowId(), request.getSeats());
+            Booking booking = bookingService.createBooking(
+                    request.getUserId(),
+                    request.getShowId(),
+                    request.getSeatNumbers()
+            );
             return ResponseEntity.ok(booking);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
-    // Get user bookings
-    @GetMapping("/{userId}")
-    public ResponseEntity<List<Booking>> getBookings(@PathVariable Long userId) {
-        List<Booking> bookings = bookingService.getBookingsForUser(userId);
-        return ResponseEntity.ok(bookings);
-    }
-
-    // Cancel booking
+    // ✅ Cancel booking
     @DeleteMapping("/{bookingId}")
-    public ResponseEntity<?> cancelBooking(@PathVariable Long bookingId) {
+    public ResponseEntity<String> cancelBooking(@PathVariable Long bookingId) {
         try {
             bookingService.cancelBooking(bookingId);
-            return ResponseEntity.ok("Booking canceled successfully");
+            return ResponseEntity.ok("Booking canceled successfully: " + bookingId);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.status(404).body(e.getMessage());
+        }
+    }
+
+    // ✅ Get booking details
+    @GetMapping("/{bookingId}")
+    public ResponseEntity<?> getBooking(@PathVariable Long bookingId) {
+        try {
+            Booking booking = bookingService.getBookingById(bookingId);
+            return ResponseEntity.ok(booking);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(404).body(e.getMessage());
         }
     }
 }

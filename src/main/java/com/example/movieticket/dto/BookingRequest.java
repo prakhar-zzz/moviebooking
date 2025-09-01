@@ -1,9 +1,11 @@
 package com.example.movieticket.dto;
 
+import java.util.List;
+
 public class BookingRequest {
     private Long userId;
     private Long showId;
-    private int seats;
+    private List<String> seatNumbers;
 
     // Getters & Setters
     public Long getUserId() { return userId; }
@@ -12,6 +14,6 @@ public class BookingRequest {
     public Long getShowId() { return showId; }
     public void setShowId(Long showId) { this.showId = showId; }
 
-    public int getSeats() { return seats; }
-    public void setSeats(int seats) { this.seats = seats; }
+    public List<String> getSeatNumbers() { return seatNumbers; }
+    public void setSeatNumbers(List<String> seatNumbers) { this.seatNumbers = seatNumbers; }
 }

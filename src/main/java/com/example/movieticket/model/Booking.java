@@ -1,6 +1,8 @@
 package com.example.movieticket.model;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 public class Booking {
@@ -9,22 +11,34 @@ public class Booking {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User user;
+    private String customerName;   // later can link with User table
+
+    private LocalDateTime bookingTime = LocalDateTime.now();
 
     @ManyToOne
     @JoinColumn(name = "show_id")
     private Show show;
 
-    private int seatsBooked;
+    @ManyToMany
+    @JoinTable(
+            name = "booking_seats",
+            joinColumns = @JoinColumn(name = "booking_id"),
+            inverseJoinColumns = @JoinColumn(name = "seat_id")
+    )
+    private List<Seat> seats;
 
-    // Getters & Setters
+    // getters and setters
     public Long getId() { return id; }
-    public User getUser() { return user; }
-    public void setUser(User user) { this.user = user; }
+
+    public String getCustomerName() { return customerName; }
+    public void setCustomerName(String customerName) { this.customerName = customerName; }
+
+    public LocalDateTime getBookingTime() { return bookingTime; }
+    public void setBookingTime(LocalDateTime bookingTime) { this.bookingTime = bookingTime; }
+
     public Show getShow() { return show; }
     public void setShow(Show show) { this.show = show; }
-    public int getSeatsBooked() { return seatsBooked; }
-    public void setSeatsBooked(int seatsBooked) { this.seatsBooked = seatsBooked; }
+
+    public List<Seat> getSeats() { return seats; }
+    public void setSeats(List<Seat> seats) { this.seats = seats; }
 }

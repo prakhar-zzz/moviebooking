@@ -1,32 +1,43 @@
 package com.example.movieticket.controller;
 
 import com.example.movieticket.model.User;
-import com.example.movieticket.service.AuthService;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.example.movieticket.repository.UserRepository;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Optional;
-@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/auth")
+@CrossOrigin(origins = "*")
 public class AuthController {
 
-    @Autowired
-    private AuthService authService;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    @PostMapping("/register")
-    public ResponseEntity<User> register(@RequestBody User user) {
-        User savedUser = authService.register(user);
-        return ResponseEntity.ok(savedUser);
+    public AuthController(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
-    @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody User user) {
-        Optional<User> loggedIn = authService.login(user.getUsername(), user.getPassword());
-        if (loggedIn.isPresent()) {
-            return ResponseEntity.ok("Login successful for user: " + loggedIn.get().getUsername());
+    // ✅ Register new user
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@RequestBody User user) {
+        if (userRepository.findByUsername(user.getUsername()).isPresent()) {
+            return ResponseEntity.badRequest().body("Username already exists");
         }
-        return ResponseEntity.status(401).body("Invalid username or password");
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        userRepository.save(user);
+        return ResponseEntity.ok("User registered successfully");
+    }
+
+    // ✅ Login (for testing, returns message only)
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody User user) {
+        User existing = userRepository.findByUsername(user.getUsername())
+                .orElse(null);
+        if (existing == null || !passwordEncoder.matches(user.getPassword(), existing.getPassword())) {
+            return ResponseEntity.status(401).body("Invalid credentials");
+        }
+        return ResponseEntity.ok("Login successful for user: " + existing.getUsername());
     }
 }

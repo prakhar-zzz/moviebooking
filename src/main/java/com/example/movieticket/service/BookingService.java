@@ -1,86 +1,103 @@
 package com.example.movieticket.service;
 
 import com.example.movieticket.model.Booking;
+import com.example.movieticket.model.Seat;
 import com.example.movieticket.model.Show;
 import com.example.movieticket.model.User;
 import com.example.movieticket.repository.BookingRepository;
+import com.example.movieticket.repository.SeatRepository;
 import com.example.movieticket.repository.ShowRepository;
 import com.example.movieticket.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class BookingService {
 
-    @Autowired
-    private BookingRepository bookingRepository;
+    private final BookingRepository bookingRepository;
+    private final SeatRepository seatRepository;
+    private final ShowRepository showRepository;
+    private final UserRepository userRepository;
 
-    @Autowired
-    private ShowRepository showRepository;
+    public BookingService(BookingRepository bookingRepository,
+                          SeatRepository seatRepository,
+                          ShowRepository showRepository,
+                          UserRepository userRepository) {
+        this.bookingRepository = bookingRepository;
+        this.seatRepository = seatRepository;
+        this.showRepository = showRepository;
+        this.userRepository = userRepository;
+    }
 
-    @Autowired
-    private UserRepository userRepository;
+    /**
+     * Create booking linked with a user
+     */
+    @Transactional
+    public Booking createBooking(Long userId, Long showId, List<String> seatNumbers) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-    // Book seats
-    public Booking bookShow(Long userId, Long showId, int seats) {
-        // Fetch user
-        Optional<User> optionalUser = userRepository.findById(userId);
-        if (optionalUser.isEmpty()) {
-            throw new RuntimeException("User not found");
+        Show show = showRepository.findById(showId)
+                .orElseThrow(() -> new RuntimeException("Show not found"));
+
+        List<Seat> seats = seatRepository.findByShow_IdAndSeatNumberIn(showId, seatNumbers);
+
+        // Check if all requested seats exist
+        if (seats.size() != seatNumbers.size()) {
+            throw new RuntimeException("One or more seats not found in this show");
         }
-        User user = optionalUser.get();
 
-        // Fetch show
-        Optional<Show> optionalShow = showRepository.findById(showId);
-        if (optionalShow.isEmpty()) {
-            throw new RuntimeException("Show not found");
-        }
-        Show show = optionalShow.get();
-
-        if (seats <= 0) {
-            throw new RuntimeException("Number of seats must be greater than 0");
+        // Check seat availability
+        for (Seat seat : seats) {
+            if (seat.isBooked()) {
+                throw new RuntimeException("Seat already booked: " + seat.getSeatNumber());
+            }
         }
 
-        if (show.getAvailableSeats() < seats) {
-            throw new RuntimeException("Not enough seats available");
-        }
+        // Mark seats booked
+        seats.forEach(seat -> seat.setBooked(true));
+        seatRepository.saveAll(seats);
 
-        // Reduce available seats
-        show.setAvailableSeats(show.getAvailableSeats() - seats);
+        // Update show availability
+        show.setAvailableSeats(show.getAvailableSeats() - seats.size());
         showRepository.save(show);
 
-        // Create booking
+        // Save booking
         Booking booking = new Booking();
-        booking.setUser(user);           // now works
         booking.setShow(show);
-        booking.setSeatsBooked(seats);
-
+        booking.setSeats(seats);
+        booking.setCustomerName(user.getUsername()); // optional, for display
         return bookingRepository.save(booking);
     }
 
-    // Get bookings for a user
-    public List<Booking> getBookingsForUser(Long userId) {
-        return bookingRepository.findByUserId(userId);
-    }
-
-    // Cancel booking
+    /**
+     * Cancel booking
+     */
+    @Transactional
     public void cancelBooking(Long bookingId) {
-        Optional<Booking> optionalBooking = bookingRepository.findById(bookingId);
-        if (optionalBooking.isEmpty()) {
-            throw new RuntimeException("Booking not found");
-        }
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Booking not found"));
 
-        Booking booking = optionalBooking.get();
+        // Free seats
+        booking.getSeats().forEach(seat -> seat.setBooked(false));
+        seatRepository.saveAll(booking.getSeats());
+
+        // Update show availability
         Show show = booking.getShow();
-
-        // Return seats to show
-        show.setAvailableSeats(show.getAvailableSeats() + booking.getSeatsBooked());
+        show.setAvailableSeats(show.getAvailableSeats() + booking.getSeats().size());
         showRepository.save(show);
 
         // Delete booking
         bookingRepository.delete(booking);
+    }
+
+    /**
+     * Get booking details
+     */
+    public Booking getBookingById(Long bookingId) {
+        return bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Booking not found"));
     }
 }
