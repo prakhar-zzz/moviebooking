@@ -20,16 +20,13 @@ public class ShowService {
     private SeatRepository seatRepository;
 
     public Show createShow(Show show) {
-        // Set initial values
         if (show.getTotalSeats() == 0) {
             show.setTotalSeats(100);
         }
         show.setAvailableSeats(show.getTotalSeats());
 
-        // Save show first
         Show savedShow = showRepository.save(show);
 
-        // Generate seats
         List<Seat> seats = new ArrayList<>();
         for (int i = 1; i <= savedShow.getTotalSeats(); i++) {
             Seat seat = new Seat();
@@ -41,7 +38,6 @@ public class ShowService {
 
         seatRepository.saveAll(seats);
 
-        // Reload show with seats
         savedShow.setSeats(seats);
         return savedShow;
     }

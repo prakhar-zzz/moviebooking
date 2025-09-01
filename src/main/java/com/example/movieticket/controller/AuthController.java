@@ -19,7 +19,6 @@ public class AuthController {
         this.passwordEncoder = passwordEncoder;
     }
 
-    // ✅ Register new user
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody User user) {
         if (userRepository.findByUsername(user.getUsername()).isPresent()) {
@@ -30,7 +29,6 @@ public class AuthController {
         return ResponseEntity.ok("User registered successfully");
     }
 
-    // ✅ Login (for testing, returns message only)
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody User user) {
         User existing = userRepository.findByUsername(user.getUsername())

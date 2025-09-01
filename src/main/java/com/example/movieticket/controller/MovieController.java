@@ -14,13 +14,11 @@ public class MovieController {
     @Autowired
     private MovieRepository movieRepository;
 
-    // Get all movies
     @GetMapping
     public List<Movie> getAllMovies() {
         return movieRepository.findAll();
     }
 
-    // Add movie (Admin only later)
     @PostMapping
     public Movie addMovie(@RequestBody Movie movie) {
         return movieRepository.save(movie);

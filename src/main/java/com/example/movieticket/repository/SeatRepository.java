@@ -7,9 +7,7 @@ import java.util.List;
 
 public interface SeatRepository extends JpaRepository<Seat, Long> {
 
-    // Get all seats of a show
     List<Seat> findByShow_Id(Long showId);
 
-    // Get specific seats of a show by seat numbers
     List<Seat> findByShow_IdAndSeatNumberIn(Long showId, List<String> seatNumbers);
 }

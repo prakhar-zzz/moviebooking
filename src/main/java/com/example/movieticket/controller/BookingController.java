@@ -17,7 +17,6 @@ public class BookingController {
         this.bookingService = bookingService;
     }
 
-    // ✅ Create booking
     @PostMapping
     public ResponseEntity<?> createBooking(@RequestBody BookingRequest request) {
         try {
@@ -32,7 +31,6 @@ public class BookingController {
         }
     }
 
-    // ✅ Cancel booking
     @DeleteMapping("/{bookingId}")
     public ResponseEntity<String> cancelBooking(@PathVariable Long bookingId) {
         try {
@@ -43,7 +41,6 @@ public class BookingController {
         }
     }
 
-    // ✅ Get booking details
     @GetMapping("/{bookingId}")
     public ResponseEntity<?> getBooking(@PathVariable Long bookingId) {
         try {

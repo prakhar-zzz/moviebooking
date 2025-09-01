@@ -11,7 +11,7 @@ public class Booking {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String customerName;   // later can link with User table
+    private String customerName;
 
     private LocalDateTime bookingTime = LocalDateTime.now();
 
@@ -27,7 +27,6 @@ public class Booking {
     )
     private List<Seat> seats;
 
-    // getters and setters
     public Long getId() { return id; }
 
     public String getCustomerName() { return customerName; }

@@ -19,14 +19,12 @@ public class SeatController {
         this.seatService = seatService;
     }
 
-    // ✅ Get seats for a show
     @GetMapping("/{showId}/seats")
     public ResponseEntity<List<Seat>> getSeats(@PathVariable Long showId) {
         List<Seat> seats = seatService.getSeatsForShow(showId);
         return ResponseEntity.ok(seats);
     }
 
-    // ✅ Reserve seats by seat numbers
     @PostMapping("/{showId}/reserve")
     public ResponseEntity<String> reserveSeats(
             @PathVariable Long showId,

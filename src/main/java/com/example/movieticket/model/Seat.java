@@ -19,7 +19,6 @@ public class Seat {
     @JsonBackReference
     private Show show;
 
-    // --- getters & setters ---
 
     public Long getId() { return id; }
 

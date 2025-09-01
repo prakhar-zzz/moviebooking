@@ -18,7 +18,6 @@ public class AuthService {
     private PasswordEncoder passwordEncoder;
 
     public User register(User user) {
-        // encrypt password before saving
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         return userRepository.save(user);
     }

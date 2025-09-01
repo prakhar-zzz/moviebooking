@@ -18,12 +18,10 @@ public class SeatService {
     @Autowired
     private ShowRepository showRepository;
 
-    // Get all seats for a show
     public List<Seat> getSeatsForShow(Long showId) {
         return seatRepository.findByShow_Id(showId);
     }
 
-    // Reserve seats by seat numbers
     public void reserveSeatsBySeatNumbers(Long showId, List<String> seatNumbers) {
         Show show = showRepository.findById(showId)
                 .orElseThrow(() -> new RuntimeException("Show not found"));
@@ -43,7 +41,6 @@ public class SeatService {
 
         seatRepository.saveAll(seats);
 
-        // Update available seats in show
         show.setAvailableSeats(show.getAvailableSeats() - bookedCount);
         showRepository.save(show);
     }
