@@ -1,7 +1,9 @@
 package com.example.movieticket.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,20 +15,21 @@ public class Show {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String movieName;
     private int totalSeats;
     private int availableSeats;
     private String showTime;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "movie_id")
+    @JsonBackReference
+    private Movie movie;
 
     @OneToMany(mappedBy = "show", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JsonManagedReference
     private List<Seat> seats = new ArrayList<>();
 
-
+    // Getters & Setters
     public Long getId() { return id; }
-
-    public String getMovieName() { return movieName; }
-    public void setMovieName(String movieName) { this.movieName = movieName; }
 
     public int getTotalSeats() { return totalSeats; }
     public void setTotalSeats(int totalSeats) { this.totalSeats = totalSeats; }
@@ -36,6 +39,9 @@ public class Show {
 
     public String getShowTime() { return showTime; }
     public void setShowTime(String showTime) { this.showTime = showTime; }
+
+    public Movie getMovie() { return movie; }
+    public void setMovie(Movie movie) { this.movie = movie; }
 
     public List<Seat> getSeats() { return seats; }
     public void setSeats(List<Seat> seats) { this.seats = seats; }

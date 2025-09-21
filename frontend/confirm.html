@@ -1,19 +1,37 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>Booking Confirmation</title>
+  <meta charset="utf-8" />
+  <title>Booking Confirmed</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="container">
+  <div class="page">
+    <div class="header">
+      <div class="logo">🎬 Movie Ticket Booking</div>
+      <div class="actions"><button onclick="location.href='movies.html'">Back to Movies</button></div>
+    </div>
+
     <h2>Booking Confirmed 🎉</h2>
-    <p id="bookingDetails"></p>
-    <a href="dashboard.html"><button>Back to Dashboard</button></a>
+    <div id="ticket" class="ticket"></div>
   </div>
-  <script src="script.js"></script>
-  <script>
-    showConfirmation();
-  </script>
+
+<script>
+const t = document.getElementById("ticket");
+const b = JSON.parse(localStorage.getItem("lastBooking") || 'null');
+
+if(!b){
+  t.innerHTML = "<p>No booking found.</p>";
+} else {
+  const movie = b.show?.movie?.title || b.show?.movieName || 'Movie';
+  t.innerHTML = `
+    <h3>${movie}</h3>
+    <p><strong>Booking ID:</strong> ${b.id}</p>
+    <p><strong>Seats:</strong> ${b.seats.map(s=>s.seatNumber).join(", ")}</p>
+    <p><strong>Show Time:</strong> ${b.show?.showTime || '—'}</p>
+    <p style="color:var(--muted)"><strong>Booked By:</strong> ${b.customerName || localStorage.getItem("username") || '—'}</p>
+  `;
+}
+</script>
 </body>
 </html>

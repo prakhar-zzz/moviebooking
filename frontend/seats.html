@@ -1,14 +1,379 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Shows</title>
-  <link rel="stylesheet" href="css/style.css">
+  <meta charset="utf-8"/>
+  <title>Select Seats - Movie Ticket Booking</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    :root{
+      --primary:#2575fc;
+      --accent:#6a11cb;
+      --bg-start: #6a11cb;
+      --bg-end: #2575fc;
+      --card-bg: #ffffff;
+      --muted: #666;
+      --danger: #ff6b6b;
+      --ok: #2ecc71;
+      --radius: 12px;
+      --seat-size: 44px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%; margin:0;}
+    body{
+      font-family: Arial, Helvetica, sans-serif;
+      background: linear-gradient(135deg, var(--bg-start), var(--bg-end));
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:28px;
+      color:#222;
+    }
+
+    /* Container (matches registration) */
+    .wrap{
+      width:100%;
+      max-width:980px;
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding:22px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+    }
+
+    /* Header */
+    .header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:14px;
+    }
+    .logo{ font-weight:700; color:var(--primary); font-size:18px;}
+    .top-actions{ display:flex; gap:10px; align-items:center; }
+
+    /* Buttons (match register/login) */
+    .btn {
+      padding:10px 14px;
+      border-radius:8px;
+      border: none;
+      cursor:pointer;
+      font-size:14px;
+      background: var(--primary);
+      color: #fff;
+      transition: background .25s;
+    }
+    .btn:hover{ background: var(--accent); }
+    .btn.ghost {
+      background: transparent;
+      border: 1px solid var(--primary);
+      color: var(--primary);
+    }
+    .btn.ghost:hover{
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .meta { color: var(--muted); margin-bottom:12px; font-size:14px; }
+
+    /* Layout */
+    .layout { display:flex; gap:18px; flex-wrap:wrap; }
+    .left { flex:1 1 480px; min-width:260px; }
+    .right { width:300px; flex-shrink:0; }
+
+    /* Seat grid (cards styled to match) */
+    .seat-grid {
+      display:grid;
+      gap:10px;
+      justify-content:center;
+      padding:12px;
+      background: #fbfeff;
+      border-radius:10px;
+      border: 1px solid rgba(0,0,0,0.05);
+    }
+    .seat {
+      width: var(--seat-size);
+      height: var(--seat-size);
+      border-radius:8px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight:700;
+      cursor:pointer;
+      user-select:none;
+      border:1px solid rgba(0,0,0,0.06);
+      transition: transform .08s, box-shadow .08s;
+      background: #eef7f2;
+      color: #013f2b;
+    }
+    .seat:focus { outline:none; box-shadow: 0 0 0 4px rgba(37,117,252,0.12); transform: translateY(-2px); }
+    .seat:hover { transform: translateY(-3px); }
+    .seat.booked { background: var(--danger); color:#fff; cursor:not-allowed; opacity:0.95; }
+    .seat.available { background:#e6fbf0; color:#01683b; }
+    .seat.selected { background:var(--primary); color:#fff; }
+
+    .legend { display:flex; gap:12px; align-items:center; margin-top:12px; color:var(--muted); font-size:13px; }
+    .legend .dot { width:14px; height:14px; border-radius:4px; display:inline-block; margin-right:6px; border:1px solid #ddd; }
+
+    /* Right info card */
+    .info {
+      background: var(--card-bg);
+      border-radius:10px;
+      padding:14px;
+      border:1px solid rgba(0,0,0,0.04);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+    }
+    .selected-list { margin-top:10px; font-weight:600; }
+    .message { margin-top:8px; color:var(--muted); font-size:13.5px; }
+
+    /* Controls */
+    .controls { display:flex; gap:10px; margin-top:12px; }
+
+    /* Responsive */
+    @media (max-width:860px){
+      .layout{ flex-direction:column; }
+      .right { width:100%; }
+    }
+  </style>
 </head>
 <body>
-  <h2>Available Shows</h2>
-  <ul id="showsList"></ul>
-  <a href="bookings.html">My Bookings</a>
-  <script src="js/app.js"></script>
+  <div class="wrap" role="main">
+    <div class="header">
+      <div class="logo">🎬 Movie Ticket Booking</div>
+      <div class="top-actions">
+        <button onclick="goBack()" class="btn ghost">Back</button>
+      </div>
+    </div>
+
+    <div id="topMeta" class="meta">Loading show...</div>
+
+    <div class="layout">
+      <div class="left">
+        <div id="seatGridWrap">
+          <div id="seatGrid" class="seat-grid" aria-live="polite" role="grid" tabindex="0"></div>
+        </div>
+
+        <div class="legend" aria-hidden="true">
+          <span><span class="dot" style="background:#e6fbf0;border-color:#c8f0dd"></span> Available</span>
+          <span><span class="dot" style="background:var(--primary)"></span> Selected</span>
+          <span><span class="dot" style="background:var(--danger)"></span> Booked</span>
+        </div>
+      </div>
+
+      <div class="right">
+        <div class="info" aria-live="polite">
+          <div><strong>Selected seats</strong></div>
+          <div id="selectedList" class="selected-list">None</div>
+          <div id="count" class="message">0 seats selected</div>
+
+          <div class="controls">
+            <button class="btn" id="bookBtn" onclick="book()" disabled>Book</button>
+            <button class="btn ghost" onclick="clearSelection()">Clear</button>
+          </div>
+
+          <div id="status" class="message" aria-live="polite"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* ---------- unchanged JS logic (same behavior) ---------- */
+const API = "http://localhost:8080";
+function qs(name){ return new URLSearchParams(window.location.search).get(name); }
+function escapeHtml(s){ return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+const showId = (() => {
+  const s = qs('showId') || qs('id') || qs('show');
+  return s && !isNaN(Number(s)) ? Number(s) : null;
+})();
+
+if (!showId) {
+  document.getElementById('topMeta').textContent = "❌ No showId provided in URL. Open from the movie's Shows page.";
+  document.getElementById('seatGrid').innerHTML = '';
+  document.getElementById('bookBtn').disabled = true;
+  throw new Error("No showId provided");
+}
+
+let seats = [], selected = new Set(), seatMap = {}, seatElems = {};
+const seatGrid = document.getElementById('seatGrid');
+const topMeta = document.getElementById('topMeta');
+const selectedList = document.getElementById('selectedList');
+const countEl = document.getElementById('count');
+const statusEl = document.getElementById('status');
+const bookBtn = document.getElementById('bookBtn');
+
+async function loadShowAndSeats() {
+  try {
+    const showRes = await fetch(`${API}/shows/${showId}`);
+    if (!showRes.ok) { const txt = await showRes.text(); throw new Error(txt || 'Show not found'); }
+    const show = await showRes.json();
+    const movieTitle = show.movie ? show.movie.title : (show.movieName || 'Movie');
+    topMeta.textContent = `${movieTitle} — ${show.showTime || ''} • Available: ${show.availableSeats ?? '—'}`;
+
+    const res = await fetch(`${API}/shows/${showId}/seats`);
+    if (!res.ok) { const t = await res.text(); throw new Error(t || 'Failed to load seats'); }
+    seats = await res.json();
+    seatMap = {}; seats.forEach(s => seatMap[s.seatNumber] = s);
+
+    const cols = (show.seatsPerRow || show.totalCols || 10);
+    renderSeatGrid(seats, cols);
+  } catch (err) {
+    seatGrid.innerHTML = `<div style="padding:18px;color:#a00">Error: ${escapeHtml(err.message || err)}</div>`;
+    console.error(err);
+    topMeta.textContent = "Error loading show";
+    statusEl.textContent = "Could not load seats.";
+  }
+}
+
+function renderSeatGrid(seatsList, cols) {
+  seatGrid.style.gridTemplateColumns = `repeat(${cols}, ${getComputedStyle(document.documentElement).getPropertyValue('--seat-size') || '44px'})`;
+
+  seatsList.sort((a,b) => {
+    const sa = String(a.seatNumber||''), sb = String(b.seatNumber||'');
+    const ma = sa.match(/^([A-Za-z]*)(\d+)$/) || [sa, sa, 0];
+    const mb = sb.match(/^([A-Za-z]*)(\d+)$/) || [sb, sb, 0];
+    const ra = ma[1]||'', rb = mb[1]||'';
+    if (ra === rb) return Number(ma[2]) - Number(mb[2]);
+    return ra.localeCompare(rb);
+  });
+
+  seatGrid.innerHTML = '';
+  seatElems = {};
+
+  seatsList.forEach(seat => {
+    const el = document.createElement('div');
+    const number = String(seat.seatNumber || '');
+    el.className = 'seat ' + (seat.booked ? 'booked' : 'available');
+    el.textContent = number;
+    el.setAttribute('tabindex', seat.booked ? '-1' : '0');
+    el.setAttribute('role', 'button');
+    el.setAttribute('aria-pressed', 'false');
+    el.setAttribute('aria-label', `${number} ${seat.booked ? 'booked' : 'available'}`);
+
+    if (!seat.booked) {
+      el.addEventListener('click', () => toggleSeat(number, el));
+      el.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); toggleSeat(number, el); }
+      });
+    } else {
+      el.title = 'Already booked';
+    }
+
+    seatGrid.appendChild(el);
+    seatElems[number] = el;
+  });
+
+  updateSelectionUI();
+}
+
+function toggleSeat(seatNumber, el) {
+  if (!el) el = seatElems[seatNumber];
+  if (!el || el.classList.contains('booked')) return;
+  if (selected.has(seatNumber)) {
+    selected.delete(seatNumber);
+    el.classList.remove('selected');
+    el.setAttribute('aria-pressed','false');
+  } else {
+    selected.add(seatNumber);
+    el.classList.add('selected');
+    el.setAttribute('aria-pressed','true');
+  }
+  updateSelectionUI();
+}
+
+function clearSelection() {
+  selected.clear();
+  Object.values(seatElems).forEach(d => d.classList.remove('selected'));
+  updateSelectionUI();
+}
+
+function updateSelectionUI(){
+  const arr = Array.from(selected).sort((a,b) => {
+    const na = parseInt(a.replace(/\D/g,'')) || 0;
+    const nb = parseInt(b.replace(/\D/g,'')) || 0;
+    return na - nb;
+  });
+  selectedList.textContent = arr.length ? arr.join(', ') : 'None';
+  countEl.textContent = `${arr.length} seat${arr.length === 1 ? '' : 's'} selected`;
+  bookBtn.disabled = arr.length === 0;
+  statusEl.textContent = '';
+}
+
+async function book() {
+  const userId = localStorage.getItem('userId');
+  if (!userId) {
+    const go = confirm('You must be logged in to book. Go to Register/Login?');
+    if (go) window.location.href = 'login.html';
+    return;
+  }
+
+  const seatNumbers = Array.from(selected);
+  if (seatNumbers.length === 0) { alert('Select at least one seat'); return; }
+
+  bookBtn.disabled = true;
+  statusEl.style.color = '#333';
+  statusEl.textContent = 'Processing booking...';
+
+  try {
+    const token = localStorage.getItem('token');
+    const headers = {'Content-Type':'application/json'};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const res = await fetch(`${API}/bookings`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        userId: Number(userId),
+        showId: Number(showId),
+        seatNumbers: seatNumbers
+      })
+    });
+
+    const raw = await res.text();
+    let body = null;
+    try { body = JSON.parse(raw); } catch(e) { body = null; }
+
+    if (!res.ok) {
+      const errMsg = body?.message || raw || 'Booking failed';
+      statusEl.style.color = 'red';
+      statusEl.textContent = `Booking failed: ${errMsg}`;
+      bookBtn.disabled = false;
+      return;
+    }
+
+    const booking = body || { message: raw };
+    markSeatsAsBooked(seatNumbers);
+    localStorage.setItem('lastBooking', JSON.stringify(booking));
+    statusEl.style.color = 'green';
+    statusEl.textContent = 'Booking successful! Redirecting...';
+    setTimeout(()=> window.location.href = 'confirm.html', 600);
+
+  } catch (err) {
+    console.error(err);
+    statusEl.style.color = 'red';
+    statusEl.textContent = 'Booking error: ' + (err.message || err);
+    bookBtn.disabled = false;
+  }
+}
+
+function markSeatsAsBooked(seatNumbers){
+  seatNumbers.forEach(sn => {
+    const el = seatElems[sn];
+    if (el) {
+      el.classList.remove('selected','available');
+      el.classList.add('booked');
+      el.setAttribute('tabindex','-1');
+      el.setAttribute('aria-pressed','false');
+      el.style.cursor = 'not-allowed';
+      el.title = 'Booked';
+    }
+    if (seatMap[sn]) seatMap[sn].booked = true;
+  });
+  selected.clear();
+  updateSelectionUI();
+}
+
+function goBack(){ window.history.back(); }
+
+loadShowAndSeats();
+</script>
 </body>
 </html>

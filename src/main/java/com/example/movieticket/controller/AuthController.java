@@ -1,41 +1,49 @@
 package com.example.movieticket.controller;
 
 import com.example.movieticket.model.User;
-import com.example.movieticket.repository.UserRepository;
+import com.example.movieticket.service.AuthService;
+import com.example.movieticket.security.JwtUtil;
+
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+import java.util.Optional;
+
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/auth")
-@CrossOrigin(origins = "http://127.0.0.1:5500")
 public class AuthController {
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
+    private final AuthService authService;
+    private final JwtUtil jwtUtil;
 
-    public AuthController(UserRepository userRepository, PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
+    // Constructor injection (preferred)
+    public AuthController(AuthService authService, JwtUtil jwtUtil) {
+        this.authService = authService;
+        this.jwtUtil = jwtUtil;
     }
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody User user) {
-        if (userRepository.findByUsername(user.getUsername()).isPresent()) {
-            return ResponseEntity.badRequest().body("Username already exists");
-        }
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        userRepository.save(user);
-        return ResponseEntity.ok("User registered successfully");
+        User savedUser = authService.register(user);
+        // hide password before returning
+        savedUser.setPassword(null);
+        return ResponseEntity.ok(savedUser);
     }
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody User user) {
-        User existing = userRepository.findByUsername(user.getUsername())
-                .orElse(null);
-        if (existing == null || !passwordEncoder.matches(user.getPassword(), existing.getPassword())) {
-            return ResponseEntity.status(401).body("Invalid credentials");
+        Optional<User> loggedIn = authService.login(user.getUsername(), user.getPassword());
+        if (loggedIn.isPresent()) {
+            User u = loggedIn.get();
+            // generate JWT token (stores username, role, userId)
+            String token = jwtUtil.generateToken(u.getUsername(), u.getRole(), u.getId());
+            // hide password
+            u.setPassword(null);
+            // return both user and token
+            return ResponseEntity.ok(Map.of("user", u, "token", token));
         }
-        return ResponseEntity.ok("Login successful for user: " + existing.getUsername());
+        return ResponseEntity.status(401).body(Map.of("error", "Invalid username or password"));
     }
 }
