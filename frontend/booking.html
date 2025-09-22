@@ -2,164 +2,172 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Book Seats</title>
+  <title>My Bookings - Movie Ticket Booking</title>
   <style>
+    :root {
+      --primary: #2575fc;
+      --accent: #6a11cb;
+      --bg: #f4f7fb;
+      --card: #fff;
+      --muted: #666;
+    }
     body {
+      margin: 0;
       font-family: Arial, sans-serif;
-      background: linear-gradient(135deg, #6a11cb, #2575fc);
+      background: linear-gradient(135deg, var(--accent), var(--primary));
+      min-height: 100vh;
       display: flex;
       justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      margin: 0;
+      padding: 20px;
     }
-
-    .container {
-      background: white;
-      padding: 30px;
+    .page {
+      width: 100%;
+      max-width: 900px;
+      background: var(--card);
       border-radius: 12px;
-      box-shadow: 0px 6px 15px rgba(0, 0, 0, 0.3);
-      width: 450px;
-      text-align: center;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+      padding: 24px;
     }
-
-    h2 {
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       margin-bottom: 20px;
-      color: #333;
     }
-
+    .logo {
+      font-size: 20px;
+      font-weight: bold;
+      color: var(--primary);
+    }
+    .actions { display: flex; gap: 10px; }
+    button {
+      border: none;
+      padding: 8px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: 0.2s;
+    }
+    button.primary { background: var(--primary); color: white; }
+    button.primary:hover { background: var(--accent); }
+    button.danger { background: #e74c3c; color: white; }
+    button.danger:hover { background: #c0392b; }
     .grid {
       display: grid;
-      grid-template-columns: repeat(5, 50px);
-      gap: 10px;
-      justify-content: center;
-      margin-top: 20px;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 16px;
     }
-
-    .seat {
-      width: 50px;
-      height: 50px;
-      background: #f9f9f9;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      cursor: pointer;
+    .card {
+      background: #fafafa;
+      border-radius: 10px;
+      padding: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
       display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: 0.3s;
+      flex-direction: column;
+      justify-content: space-between;
     }
-
-    .seat:hover {
-      background: #2575fc;
-      color: white;
-    }
-
-    .seat.selected {
-      background: #6a11cb;
-      color: white;
-    }
-
-    button.book-now {
-      margin-top: 20px;
-      width: 100%;
-      padding: 12px;
-      background: #2575fc;
-      border: none;
-      color: white;
-      border-radius: 6px;
-      font-size: 16px;
-      cursor: pointer;
-      transition: 0.3s;
-    }
-
-    button.book-now:hover {
-      background: #6a11cb;
-    }
+    .card h3 { margin: 0 0 6px; }
+    .muted { color: var(--muted); font-size: 13px; }
+    .empty { text-align: center; color: var(--muted); margin-top: 40px; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h2 id="showTitle">Select Your Seats</h2>
-    <div class="grid" id="seatsGrid"></div>
-    <button class="book-now" id="confirmBtn">Confirm Booking</button>
+  <div class="page">
+    <div class="header">
+      <div class="logo">🎟 My Bookings</div>
+      <div class="actions">
+        <span id="who"></span>
+        <button onclick="logout()">Logout</button>
+      </div>
+    </div>
+    <div id="bookingsList" class="grid"></div>
+    <div id="emptyMsg" class="empty" style="display:none;">No bookings yet.</div>
   </div>
 
-  <script>
-    const API_URL = "http://localhost:8080"; // replace with your backend URL
+<script>
+const API = "http://localhost:8080";
+const token = localStorage.getItem("token");
+const userId = localStorage.getItem("userId");
+document.getElementById("who").textContent = localStorage.getItem("username") || "";
 
-    // Get showId from URL
-    const params = new URLSearchParams(window.location.search);
-    const showId = params.get("showId");
+if (!token || !userId) {
+  alert("Please log in first");
+  window.location.href = "login.html";
+}
 
-    const seatsGrid = document.getElementById("seatsGrid");
-    const showTitle = document.getElementById("showTitle");
-    const confirmBtn = document.getElementById("confirmBtn");
-    let selectedSeats = [];
+function logout() {
+  localStorage.clear();
+  window.location.href = "login.html";
+}
 
-    // Fetch show details
-    async function fetchShow() {
-      try {
-        const res = await fetch(`${API_URL}/shows/${showId}`);
-        if (!res.ok) throw new Error("Failed to fetch show");
-        const show = await res.json();
+async function fetchBookings() {
+  try {
+    const res = await fetch(`${API}/bookings/user/${userId}`, {
+      headers: { "Authorization": "Bearer " + token }
+    });
+    if (!res.ok) throw new Error("Failed to fetch bookings");
+    const bookings = await res.json();
 
-        showTitle.textContent = `Select Seats for ${show.movieName} (${show.showTime})`;
+    const container = document.getElementById("bookingsList");
+    const emptyMsg = document.getElementById("emptyMsg");
+    container.innerHTML = "";
 
-        // Create seat grid
-        for (let i = 1; i <= show.totalSeats; i++) {
-          const seatDiv = document.createElement("div");
-          seatDiv.className = "seat";
-          seatDiv.textContent = i;
-
-          if (!show.availableSeats.includes(i)) {
-            seatDiv.style.background = "#ccc";
-            seatDiv.style.cursor = "not-allowed";
-          } else {
-            seatDiv.addEventListener("click", () => {
-              if (seatDiv.classList.contains("selected")) {
-                seatDiv.classList.remove("selected");
-                selectedSeats = selectedSeats.filter(s => s !== i);
-              } else {
-                seatDiv.classList.add("selected");
-                selectedSeats.push(i);
-              }
-            });
-          }
-
-          seatsGrid.appendChild(seatDiv);
-        }
-      } catch (err) {
-        alert(err.message);
-      }
+    if (bookings.length === 0) {
+      emptyMsg.style.display = "block";
+      return;
+    } else {
+      emptyMsg.style.display = "none";
     }
 
-    // Confirm booking
-    confirmBtn.addEventListener("click", async () => {
-      if (selectedSeats.length === 0) {
-        alert("Select at least one seat");
-        return;
-      }
-
-      try {
-        const res = await fetch(`${API_URL}/shows/${showId}/book`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ seats: selectedSeats })
-        });
-
-        if (res.ok) {
-          alert("Booking confirmed!");
-          window.location.href = "dashboard.html";
-        } else {
-          const text = await res.text();
-          alert("Booking failed: " + text);
-        }
-      } catch (err) {
-        alert("Server error: " + err.message);
-      }
+    bookings.forEach(b => {
+      const div = document.createElement("div");
+      div.className = "card";
+      div.innerHTML = `
+        <div>
+          <h3>${escapeHtml(b.show.movieName || (b.show.movie?.title ?? "Movie"))}</h3>
+          <p class="muted">Show Time: ${escapeHtml(b.show.showTime)}</p>
+          <p class="muted">Seats: ${b.seats.map(s => s.seatNumber).join(", ")}</p>
+          <p class="muted">Booked At: ${new Date(b.bookingTime).toLocaleString()}</p>
+        </div>
+        <div style="margin-top:12px; text-align:right;">
+          <button class="danger" onclick="cancelBooking(${b.id})">Cancel</button>
+        </div>
+      `;
+      container.appendChild(div);
     });
+  } catch (err) {
+    console.error(err);
+    document.getElementById("bookingsList").innerHTML =
+      `<div style="grid-column:1/-1; text-align:center; color:red;">Error loading bookings</div>`;
+  }
+}
 
-    fetchShow();
-  </script>
+async function cancelBooking(bookingId) {
+  if (!confirm("Are you sure you want to cancel this booking?")) return;
+  try {
+    const res = await fetch(`${API}/bookings/${bookingId}`, {
+      method: "DELETE",
+      headers: { "Authorization": "Bearer " + token }
+    });
+    if (res.ok) {
+      alert("Booking canceled successfully!");
+      fetchBookings();
+    } else {
+      const errText = await res.text();
+      alert("Cancel failed: " + errText);
+    }
+  } catch (err) {
+    alert("Server error while canceling");
+  }
+}
+
+function escapeHtml(s) {
+  return String(s || "").replace(/[&<>"']/g, c =>
+    ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c])
+  );
+}
+
+fetchBookings();
+</script>
 </body>
 </html>

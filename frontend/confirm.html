@@ -1,15 +1,96 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <title>Booking Confirmed</title>
-  <link rel="stylesheet" href="style.css">
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    :root {
+      --primary: #2575fc;
+      --accent: #6a11cb;
+      --muted: #666;
+      --bg-start: #6a11cb;
+      --bg-end: #2575fc;
+      --card-bg: #ffffff;
+      --radius: 12px;
+    }
+    html, body { height:100%; margin:0; }
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: linear-gradient(135deg, var(--bg-start), var(--bg-end));
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      padding:24px;
+      color:#222;
+    }
+    .page {
+      width:100%;
+      max-width: 640px;
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      box-shadow: 0 8px 28px rgba(0,0,0,0.2);
+      padding: 26px;
+      box-sizing: border-box;
+    }
+    .header {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:20px;
+    }
+    .logo {
+      font-weight:700;
+      font-size:18px;
+      color: var(--primary);
+    }
+    .actions button {
+      background: var(--primary);
+      color:#fff;
+      border:none;
+      padding:10px 14px;
+      border-radius:8px;
+      cursor:pointer;
+      font-size:14px;
+      transition: background .25s;
+    }
+    .actions button:hover { background: var(--accent); }
+
+    h2 {
+      margin-top:0;
+      color:#222;
+      text-align:center;
+    }
+
+    /* Ticket card */
+    .ticket {
+      background: #f9f9f9;
+      border-radius:10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      padding:20px;
+      margin-top:20px;
+    }
+    .ticket h3 {
+      margin:0 0 10px;
+      font-size:20px;
+      color:#111;
+    }
+    .ticket p {
+      margin:6px 0;
+      font-size:14px;
+      color:#333;
+    }
+    .ticket p strong { color:#000; }
+    .muted { color: var(--muted); }
+  </style>
 </head>
 <body>
   <div class="page">
     <div class="header">
       <div class="logo">🎬 Movie Ticket Booking</div>
-      <div class="actions"><button onclick="location.href='movies.html'">Back to Movies</button></div>
+      <div class="actions">
+        <button onclick="location.href='movies.html'">Back to Movies</button>
+      </div>
     </div>
 
     <h2>Booking Confirmed 🎉</h2>
@@ -24,12 +105,16 @@ if(!b){
   t.innerHTML = "<p>No booking found.</p>";
 } else {
   const movie = b.show?.movie?.title || b.show?.movieName || 'Movie';
+  const seats = b.seats ? b.seats.map(s=>s.seatNumber).join(", ") : "—";
+  const showTime = b.show?.showTime || '—';
+  const customer = b.customerName || localStorage.getItem("username") || '—';
+
   t.innerHTML = `
     <h3>${movie}</h3>
-    <p><strong>Booking ID:</strong> ${b.id}</p>
-    <p><strong>Seats:</strong> ${b.seats.map(s=>s.seatNumber).join(", ")}</p>
-    <p><strong>Show Time:</strong> ${b.show?.showTime || '—'}</p>
-    <p style="color:var(--muted)"><strong>Booked By:</strong> ${b.customerName || localStorage.getItem("username") || '—'}</p>
+    <p><strong>Booking ID:</strong> ${b.id || "—"}</p>
+    <p><strong>Seats:</strong> ${seats}</p>
+    <p><strong>Show Time:</strong> ${showTime}</p>
+    <p class="muted"><strong>Booked By:</strong> ${customer}</p>
   `;
 }
 </script>

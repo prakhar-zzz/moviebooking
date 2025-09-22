@@ -10,14 +10,13 @@
       --accent: #6a11cb;
       --muted: #666;
       --card-bg: #f9f9fb;
-      --page-max: 1000px;
+      --page-max: 1100px;
       --radius: 12px;
     }
 
-    /* Page background and container */
     html,body{height:100%; margin:0;}
     body {
-      font-family: Arial, Helvetica, sans-serif;
+      font-family: Inter, Arial, Helvetica, sans-serif;
       background: linear-gradient(135deg, var(--accent), var(--primary));
       display:flex;
       justify-content:center;
@@ -29,7 +28,7 @@
       max-width: var(--page-max);
       background:#fff;
       border-radius: var(--radius);
-      box-shadow: 0 8px 30px rgba(0,0,0,0.18);
+      box-shadow: 0 8px 40px rgba(0,0,0,0.16);
       padding: 26px;
       box-sizing:border-box;
     }
@@ -50,31 +49,72 @@
     .actions{
       display:flex;
       align-items:center;
-      gap:10px;
+      gap:12px;
     }
-    #who { font-weight:600; color:#444; }
+    #who { font-weight:600; color:#444; margin-right:6px; }
+
+    /* Dropdown */
+    .dropdown { position: relative; }
+    .dropbtn {
+      border: none;
+      background: transparent;
+      color: var(--primary);
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight:600;
+    }
+    .dropbtn:focus { outline: none; box-shadow: 0 0 0 3px rgba(37,117,252,0.12); }
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      right: 0;
+      top: calc(100% + 8px);
+      background: white;
+      min-width: 200px;
+      box-shadow: 0px 10px 30px rgba(0,0,0,0.12);
+      border-radius: 10px;
+      z-index: 20;
+      overflow: hidden;
+    }
+    .dropdown-content a, .dropdown-content button {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      text-decoration: none;
+      color: #333;
+      font-size: 14px;
+      width: 100%;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+    }
+    .dropdown-content a:hover, .dropdown-content button:hover {
+      background: #f7f8fb;
+      color: var(--primary);
+    }
+    .dropdown:hover .dropdown-content,
+    .dropdown:focus-within .dropdown-content {
+      display:block;
+    }
 
     /* Buttons */
-    button {
+    .btn {
       border: none;
       background: var(--primary);
       color: white;
-      padding: 10px 16px;
+      padding: 8px 14px;
       border-radius: 8px;
       cursor:pointer;
       font-size:14px;
-      transition: background .18s, transform .08s;
     }
-    button:hover{ background: var(--accent); }
-    button.ghost{
+    .btn.ghost{
       background: transparent;
       color: var(--primary);
       border: 1px solid var(--primary);
     }
-    button.ghost:hover{
-      background: var(--primary);
-      color: #fff;
-    }
+    .btn:hover{ transform: translateY(-1px); box-shadow: 0 6px 18px rgba(37,117,252,0.12); }
 
     /* Headings */
     h2{ margin: 6px 0 16px 0; color:#222; }
@@ -89,33 +129,47 @@
       background: var(--card-bg);
       border-radius: 10px;
       padding: 16px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.06);
       text-align:center;
       transition: transform .12s, box-shadow .12s;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      min-height:140px;
     }
     .card:hover{
-      transform: translateY(-4px);
-      box-shadow: 0 8px 22px rgba(0,0,0,0.12);
+      transform: translateY(-6px);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.12);
     }
     .card h3{ margin:0 0 8px; font-size:18px; color:#111; }
     .card p{ margin: 6px 0; color: var(--muted); font-size:13.5px; }
 
-    /* Small helpers */
     .center { display:flex; justify-content:center; }
     .muted { color: var(--muted); font-size:13px; margin-top:8px; }
+
     @media (max-width:480px){
       .page { padding:18px; }
-      button { padding:10px 12px; font-size:13px; }
+      .card { min-height: 150px; }
     }
   </style>
 </head>
 <body>
-  <div class="page">
+  <div class="page" role="main">
     <div class="header">
       <div class="logo">🎬 Movie Ticket Booking</div>
-      <div class="actions">
+
+      <div class="actions" aria-hidden="false">
         <span id="who"></span>
-        <button onclick="logout()" class="ghost">Logout</button>
+
+        <div class="dropdown" aria-haspopup="true">
+          <button class="dropbtn" id="menuBtn">☰ Menu ▾</button>
+          <div class="dropdown-content" role="menu" aria-labelledby="menuBtn">
+            <a href="movies.html">Movies</a>
+            <a href="booking.html">My Bookings</a>
+            <a href="profile.html">Profile</a>
+            <button onclick="logout()">Logout</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -125,30 +179,51 @@
 
 <script>
 const API = "http://localhost:8080";
-document.getElementById("who").textContent = localStorage.getItem("username") || "";
 
+// Require login: if not present, send to login page
+const username = localStorage.getItem("username");
+const token = localStorage.getItem("token");
+const userId = localStorage.getItem("userId");
+
+if (!username || !token) {
+  // no logged-in user — redirect to login
+  window.location.href = "login.html";
+} else {
+  document.getElementById("who").textContent = username;
+}
+
+/** logout clears stored auth and returns to login */
 function logout(){
   localStorage.removeItem("userId");
   localStorage.removeItem("username");
-  localStorage.removeItem("token"); // if used
+  localStorage.removeItem("token");
   window.location.href = "login.html";
 }
 
+/** fetch and render movies */
 async function fetchMovies(){
   try {
     const res = await fetch(API + "/movies");
-    if (!res.ok) throw new Error("Failed to fetch movies");
+    if (!res.ok) throw new Error("Failed to fetch movies: " + res.status);
     const movies = await res.json();
     const container = document.getElementById("moviesList");
     container.innerHTML = "";
+
+    if (!Array.isArray(movies) || movies.length === 0) {
+      container.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:var(--muted)">No movies available</div>`;
+      return;
+    }
+
     movies.forEach(m => {
       const div = document.createElement("div");
       div.className = "card";
       div.innerHTML = `
-        <h3>${escapeHtml(m.title)}</h3>
-        <p class="muted">${escapeHtml(m.genre)} • ${m.duration ? m.duration + ' min' : '—'}</p>
+        <div>
+          <h3>${escapeHtml(m.title || m.movieName || 'Untitled')}</h3>
+          <p class="muted">${escapeHtml(m.genre || '')} ${m.duration ? ' • ' + m.duration + ' min' : ''}</p>
+        </div>
         <div class="center" style="margin-top:12px">
-          <button onclick="goToShows(${m.id})">View Shows</button>
+          <button class="btn" onclick="goToShows(${m.id})">View Shows</button>
         </div>`;
       container.appendChild(div);
     });
@@ -159,13 +234,20 @@ async function fetchMovies(){
   }
 }
 
+/** navigate to shows page for selected movie */
 function goToShows(movieId){
-  // navigate to a page that lists shows for the selected movie
+  // Ensure movieId valid
+  if (!movieId) {
+    alert("No showId provided");
+    return;
+  }
   window.location.href = `show.html?movieId=${movieId}`;
 }
 
+/** small safe HTML escape */
 function escapeHtml(s){ return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
+// load
 fetchMovies();
 </script>
 </body>

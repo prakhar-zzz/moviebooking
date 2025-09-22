@@ -27,6 +27,12 @@ public class Booking {
     )
     private List<Seat> seats;
 
+    // NEW: link to user
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    // getters/setters
     public Long getId() { return id; }
 
     public String getCustomerName() { return customerName; }
@@ -40,4 +46,7 @@ public class Booking {
 
     public List<Seat> getSeats() { return seats; }
     public void setSeats(List<Seat> seats) { this.seats = seats; }
+
+    public User getUser() { return user; }
+    public void setUser(User user) { this.user = user; }
 }

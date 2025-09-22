@@ -31,7 +31,6 @@ public class BookingService {
         this.userRepository = userRepository;
     }
 
-
     @Transactional
     public Booking createBooking(Long userId, Long showId, List<String> seatNumbers) {
         User user = userRepository.findById(userId)
@@ -62,9 +61,9 @@ public class BookingService {
         booking.setShow(show);
         booking.setSeats(seats);
         booking.setCustomerName(user.getUsername());
+        booking.setUser(user);        // <-- important
         return bookingRepository.save(booking);
     }
-
 
     @Transactional
     public void cancelBooking(Long bookingId) {
@@ -81,9 +80,13 @@ public class BookingService {
         bookingRepository.delete(booking);
     }
 
-
     public Booking getBookingById(Long bookingId) {
         return bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
+    }
+
+    // NEW: return bookings for a user
+    public List<Booking> getBookingsForUser(Long userId) {
+        return bookingRepository.findByUser_Id(userId);
     }
 }

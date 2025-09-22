@@ -8,8 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = {"http://127.0.0.1:5500", "http://localhost:5500"})
 public class ShowController {
 
     private final ShowService showService;
@@ -18,30 +17,31 @@ public class ShowController {
         this.showService = showService;
     }
 
-    // ✅ Create show under a movie
+    // Create show for a movie
     @PostMapping("/movies/{movieId}/shows")
-    public ResponseEntity<Show> addShow(@PathVariable Long movieId, @RequestBody Show show) {
-        Show savedShow = showService.createShow(movieId, show);
-        return ResponseEntity.ok(savedShow);
+    public ResponseEntity<?> addShow(@PathVariable Long movieId, @RequestBody Show show) {
+        try {
+            Show saved = showService.createShow(movieId, show);
+            return ResponseEntity.ok(saved);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
-    // ✅ Get shows by movie
+    // Get shows for a movie (list)
     @GetMapping("/movies/{movieId}/shows")
-    public List<Show> getShowsByMovie(@PathVariable Long movieId) {
-        return showService.getShowsByMovie(movieId);
+    public ResponseEntity<List<Show>> getShowsForMovie(@PathVariable Long movieId) {
+        List<Show> shows = showService.getShowsByMovie(movieId);
+        return ResponseEntity.ok(shows);
     }
 
-    // ✅ Get all shows (optional)
-    @GetMapping("/shows")
-    public List<Show> getAllShows() {
-        return showService.getAllShows();
-    }
-
-    // ✅ Get single show
+    // NEW: Get a single show by its id (includes seats)
     @GetMapping("/shows/{id}")
     public ResponseEntity<Show> getShowById(@PathVariable Long id) {
         Show show = showService.getShowById(id);
-        if (show == null) return ResponseEntity.notFound().build();
+        if (show == null) {
+            return ResponseEntity.notFound().build();
+        }
         return ResponseEntity.ok(show);
     }
 }

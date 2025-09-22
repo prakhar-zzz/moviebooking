@@ -7,6 +7,7 @@ import com.example.movieticket.repository.MovieRepository;
 import com.example.movieticket.repository.SeatRepository;
 import com.example.movieticket.repository.ShowRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,15 +25,16 @@ public class ShowService {
         this.movieRepository = movieRepository;
     }
 
-    public Show createShow(Long movieId, Show show) {
+    @Transactional
+    public Show createShow(Long movieId, Show showPayload) {
         Movie movie = movieRepository.findById(movieId)
                 .orElseThrow(() -> new RuntimeException("Movie not found"));
 
-        if (show.getTotalSeats() == 0) {
-            show.setTotalSeats(100);
-        }
-        show.setAvailableSeats(show.getTotalSeats());
+        Show show = new Show();
         show.setMovie(movie);
+        show.setTotalSeats(showPayload.getTotalSeats() == 0 ? 100 : showPayload.getTotalSeats());
+        show.setAvailableSeats(showPayload.getAvailableSeats() == 0 ? show.getTotalSeats() : showPayload.getAvailableSeats());
+        show.setShowTime(showPayload.getShowTime());
 
         Show savedShow = showRepository.save(show);
 
@@ -60,8 +62,6 @@ public class ShowService {
     }
 
     public List<Show> getShowsByMovie(Long movieId) {
-        return movieRepository.findById(movieId)
-                .map(Movie::getShows)
-                .orElse(new ArrayList<>());
+        return showRepository.findByMovie_Id(movieId);
     }
 }

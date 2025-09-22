@@ -5,99 +5,113 @@
   <title>Shows - Movie Ticket Booking</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: linear-gradient(135deg, #6a11cb, #2575fc);
-      margin: 0;
-      padding: 30px;
-      color: #333;
-      display: flex;
-      justify-content: center;
-    }
-    .page {
-      background: #fff;
-      border-radius: 10px;
-      padding: 25px;
-      max-width: 800px;
-      width: 100%;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-    }
-    h2 { color: #222; }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-      gap: 16px;
-    }
-    .card {
-      padding: 16px;
-      border-radius: 8px;
-      background: #f9f9fb;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-      text-align: center;
-    }
-    button {
-      padding: 10px 14px;
-      border: none;
-      border-radius: 6px;
-      background: #2575fc;
-      color: white;
-      cursor: pointer;
-    }
-    button:hover { background: #6a11cb; }
+    :root{--primary:#2575fc;--muted:#666}
+    body{font-family:Arial;margin:0;background:linear-gradient(135deg,#6a11cb,#2575fc);display:flex;justify-content:center;padding:30px}
+    .page{width:100%;max-width:900px;background:#fff;border-radius:12px;padding:20px;box-shadow:0 10px 30px rgba(0,0,0,.12)}
+    h2{margin:0 0 12px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+    .card{background:#f9f9fb;padding:12px;border-radius:8px;min-height:110px;display:flex;flex-direction:column;justify-content:space-between}
+    .muted{color:var(--muted);font-size:13px}
+    .error{color:#c0392b;margin:12px 0}
+    .btn{background:var(--primary);color:#fff;padding:8px 12px;border:none;border-radius:8px;cursor:pointer}
   </style>
 </head>
 <body>
   <div class="page">
-    <h2>Available Shows</h2>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h2 id="title">Shows</h2>
+      <div><button class="btn" onclick="goBack()">Back</button></div>
+    </div>
+
+    <div id="error" class="error" style="display:none"></div>
     <div id="showsList" class="grid"></div>
+    <div id="empty" style="display:none" class="muted">No shows available for this movie.</div>
   </div>
 
 <script>
 const API = "http://localhost:8080";
+const token = localStorage.getItem("token"); // optional if GET is protected
 
-// read movieId from URL
-const params = new URLSearchParams(window.location.search);
-const movieId = params.get("movieId");
-if (!movieId) {
-  document.body.innerHTML = "<h2 style='color:red'>❌ No movieId provided in URL</h2>";
-  throw new Error("No movieId provided");
+function goBack(){ window.location.href = "movies.html"; }
+
+function getQueryParam(name){
+  return new URLSearchParams(window.location.search).get(name);
 }
 
-async function fetchShows() {
-  try {
-    const res = await fetch(`${API}/shows?movieId=${movieId}`);
-    if (!res.ok) throw new Error("Failed to fetch shows");
-    const shows = await res.json();
-    const container = document.getElementById("showsList");
-    container.innerHTML = "";
+async function fetchShows(){
+  const movieId = getQueryParam("movieId");
+  if (!movieId) {
+    showError("No movieId provided in URL (expected ?movieId=123).");
+    return;
+  }
 
-    if (shows.length === 0) {
-      container.innerHTML = "<p>No shows available for this movie.</p>";
+  const url = `${API}/movies/${encodeURIComponent(movieId)}/shows`;
+  const opts = { method: "GET", headers: {} };
+  if (token) opts.headers["Authorization"] = "Bearer " + token;
+
+  try {
+    const res = await fetch(url, opts);
+
+    if (!res.ok) {
+      const body = await res.text().catch(()=>res.statusText);
+      showError(`Server error (${res.status}): ${body || res.statusText}`);
       return;
     }
 
-    shows.forEach(show => {
-      const div = document.createElement("div");
-      div.className = "card";
-      div.innerHTML = `
-        <h3>Showtime: ${show.showTime}</h3>
-        <p>Total Seats: ${show.totalSeats}</p>
-        <p>Available: ${show.availableSeats}</p>
-        <button onclick="bookSeats(${show.id})">Book Now</button>
-      `;
-      container.appendChild(div);
-    });
+    // use a different local variable name to avoid any TDZ/conflict
+    const showsData = await res.json();
+    renderShows(showsData);
   } catch (err) {
-    console.error(err);
-    document.getElementById("showsList").innerHTML = "<p style='color:red'>Error loading shows.</p>";
+    console.error("fetchShows error:", err);
+    showError("Network / CORS error while fetching shows. Check server and console.");
   }
 }
 
-function bookSeats(showId) {
-  // Navigate to seat selection page
+function showError(msg){
+  const el = document.getElementById("error");
+  el.style.display = "block";
+  el.textContent = msg;
+}
+
+function renderShows(showsArray){
+  const container = document.getElementById("showsList");
+  const empty = document.getElementById("empty");
+  const errorEl = document.getElementById("error");
+  container.innerHTML = "";
+  errorEl.style.display = "none";
+
+  if (!Array.isArray(showsArray) || showsArray.length === 0) {
+    empty.style.display = "block";
+    return;
+  } else {
+    empty.style.display = "none";
+  }
+
+  showsArray.forEach(s => {
+    const div = document.createElement("div");
+    div.className = "card";
+    div.innerHTML = `
+      <div>
+        <strong>Show at:</strong>
+        <div class="muted">${escapeHtml(s.showTime || "—")}</div>
+        <div class="muted">Available Seats: ${s.availableSeats ?? "—"}</div>
+      </div>
+      <div style="text-align:right;margin-top:8px">
+        <button class="btn" onclick="openSeats(${s.id})">Book</button>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function openSeats(showId){
+  if(!showId) { alert("No showId"); return; }
   window.location.href = `seats.html?showId=${showId}`;
 }
 
+function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
+
+// run
 fetchShows();
 </script>
 </body>
