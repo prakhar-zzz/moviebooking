@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Profile - Movie Ticket Booking</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    :root{
+      --primary:#2575fc;
+      --accent:#6a11cb;
+      --muted:#666;
+      --page-max:600px;
+      --radius:12px;
+    }
+    body{
+      margin:0;
+      font-family:Arial, Helvetica, sans-serif;
+      background:linear-gradient(135deg,var(--accent),var(--primary));
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      height:100vh;
+      padding:20px;
+    }
+    .card{
+      background:#fff;
+      width:100%;
+      max-width:var(--page-max);
+      border-radius:var(--radius);
+      box-shadow:0 8px 30px rgba(0,0,0,0.16);
+      padding:28px;
+      text-align:center;
+    }
+    h2{margin:0 0 12px; color:#222;}
+    p{margin:6px 0; color:var(--muted);}
+    .badge{
+      display:inline-block;
+      padding:4px 10px;
+      border-radius:8px;
+      background:var(--primary);
+      color:#fff;
+      font-size:13px;
+      margin-top:6px;
+    }
+    .funny{
+      margin-top:16px;
+      font-size:14px;
+      font-style:italic;
+      color:#444;
+    }
+    .actions{
+      margin-top:20px;
+      display:flex;
+      gap:10px;
+      justify-content:center;
+    }
+    button{
+      border:none;
+      padding:10px 16px;
+      border-radius:8px;
+      cursor:pointer;
+      font-size:14px;
+      transition:background .2s;
+    }
+    .btn-primary{
+      background:var(--primary);
+      color:#fff;
+    }
+    .btn-primary:hover{background:var(--accent);}
+    .btn-secondary{
+      background:#f3f3f3;
+      color:#333;
+    }
+    .btn-secondary:hover{background:#e4e4e4;}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>👤 Profile</h2>
+    <p><strong>Username:</strong> <span id="username"></span></p>
+    <p><strong>Role:</strong> <span class="badge" id="role"></span></p>
+
+    <p class="funny" id="funnyMsg"></p>
+
+    <div class="actions">
+      <button class="btn-secondary" onclick="goBack()">⬅ Back</button>
+      <button class="btn-primary" onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+  <script>
+    const username = localStorage.getItem("username");
+    const role = localStorage.getItem("role");
+
+    if (!username || !role) {
+      // no session, force login
+      window.location.href = "login.html";
+    } else {
+      document.getElementById("username").textContent = username;
+      document.getElementById("role").textContent = role;
+
+      // funny role-based messages
+      const funnyMsg = document.getElementById("funnyMsg");
+      if (role === "ADMIN") {
+        funnyMsg.textContent = "🚀 Hello Boss! Remember: with great power comes great responsibility!";
+      } else {
+        funnyMsg.textContent = "🍿 Welcome to the movies! Don’t forget the popcorn 🍿🎬";
+      }
+    }
+
+    function logout(){
+      localStorage.clear();
+      window.location.href = "login.html";
+    }
+
+    function goBack(){
+      window.location.href = "movies.html";
+    }
+  </script>
+</body>
+</html>
