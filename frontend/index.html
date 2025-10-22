@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard - Movies</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #6a11cb, #2575fc);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0px 6px 15px rgba(0, 0, 0, 0.3);
+      width: 400px;
+      text-align: center;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    .movie-card {
+      background: #f9f9f9;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 8px;
+      text-align: left;
+      box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .movie-card h3 {
+      margin: 0 0 8px 0;
+      color: #2575fc;
+    }
+
+    .movie-card p {
+      margin: 4px 0;
+      color: #555;
+    }
+
+    .movie-card button {
+      margin-top: 10px;
+      width: 100%;
+      padding: 10px;
+      background: #2575fc;
+      border: none;
+      color: white;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .movie-card button:hover {
+      background: #6a11cb;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Available Shows</h2>
+    <div id="showsList"></div>
+  </div>
+
+  <script>
+    const API_URL = "http://localhost:3000"; // replace with your backend URL
+
+    async function fetchShows() {
+      try {
+        const res = await fetch(`${API_URL}/shows`);
+        if (!res.ok) throw new Error("Failed to fetch shows");
+
+        const data = await res.json();
+        const showsList = document.getElementById("showsList");
+        showsList.innerHTML = "";
+
+        data.forEach(show => {
+          const div = document.createElement("div");
+          div.className = "movie-card";
+
+          const title = document.createElement("h3");
+          title.textContent = show.movieName;
+          div.appendChild(title);
+
+          const time = document.createElement("p");
+          time.textContent = `Time: ${show.showTime}`;
+          div.appendChild(time);
+
+          const seats = document.createElement("p");
+          seats.textContent = `Available: ${show.availableSeats}`;
+          div.appendChild(seats);
+
+          const button = document.createElement("button");
+          button.textContent = "Book Now";
+          button.addEventListener("click", () => goToShow(show.id));
+          div.appendChild(button);
+
+          showsList.appendChild(div);
+        });
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    function goToShow(showId) {
+      window.location.href = `book.html?showId=${showId}`;
+    }
+
+    // Fetch shows on page load
+    fetchShows();
+  </script>
+</body>
+</html>

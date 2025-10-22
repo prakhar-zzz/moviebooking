@@ -1,0 +1,111 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Select Seats - Movie Ticket Booking</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="page">
+    <div class="header">
+      <div class="logo">🎬 Movie Ticket Booking</div>
+      <div class="actions"><button onclick="location.href='movies.html'">Back</button></div>
+    </div>
+
+    <h2 id="movieTitle">Loading…</h2>
+    <p id="showInfo" style="color:var(--muted)"></p>
+
+    <div id="seatContainer" class="seat-grid"></div>
+
+    <div style="text-align:center; margin-top:12px">
+      <button class="primary" onclick="bookSelected()">Book Selected Seats</button>
+    </div>
+
+    <p class="message" id="msg"></p>
+  </div>
+
+<script>
+const API = "http://localhost:8080";
+const params = new URLSearchParams(location.search);
+const showId = params.get("showId");
+const seatContainer = document.getElementById("seatContainer");
+const msg = document.getElementById("msg");
+let selected = [];
+
+if(!showId){ alert("No showId provided"); location.href='movies.html'; }
+
+async function load(){
+  try {
+    const res = await fetch(API + `/shows/${showId}`);
+    if(!res.ok) throw new Error("Show not found");
+    const s = await res.json();
+    const movieTitle = s.movie ? s.movie.title : (s.movieName || "Unknown Movie");
+    document.getElementById("movieTitle").textContent = movieTitle;
+    document.getElementById("showInfo").textContent = `Time: ${s.showTime || '—'} — Available: ${s.availableSeats}`;
+
+    const seatsRes = await fetch(API + `/shows/${showId}/seats`);
+    const seats = await seatsRes.json();
+    seatContainer.innerHTML = "";
+    selected = [];
+
+    seats.forEach(seat=>{
+      const d = document.createElement("div");
+      d.className = "seat " + (seat.booked ? "booked" : "available");
+      d.textContent = seat.seatNumber;
+      if(!seat.booked){
+        d.onclick = () => toggleSeat(d, seat.seatNumber);
+      }
+      seatContainer.appendChild(d);
+    });
+
+  } catch(err){
+    msg.textContent = "Error: " + err.message;
+    msg.style.color = "red";
+  }
+}
+
+function toggleSeat(el, seatNumber){
+  if(selected.includes(seatNumber)){
+    selected = selected.filter(s=>s!==seatNumber);
+    el.classList.remove("selected");
+  } else {
+    selected.push(seatNumber);
+    el.classList.add("selected");
+  }
+  msg.textContent = selected.length ? `Selected: ${selected.join(", ")}` : "";
+  msg.style.color = "#333";
+}
+
+async function bookSelected(){
+  const userId = localStorage.getItem("userId");
+  if(!userId){
+    if(!confirm("You are not logged-in (userId missing). Register/login to book.\nGo to Register?")) { return; }
+    location.href = "register.html"; return;
+  }
+  if(selected.length === 0){ alert("Select seats first"); return; }
+
+  const body = { userId: Number(userId), showId: Number(showId), seatNumbers: selected };
+
+  try {
+    const res = await fetch(API + "/bookings", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) {
+      const t = await res.text();
+      alert("Booking failed: " + t);
+      return;
+    }
+    const booking = await res.json();
+    localStorage.setItem("lastBooking", JSON.stringify(booking));
+    location.href = "confirm.html";
+  } catch(err){
+    alert("Error: " + err.message);
+  }
+}
+
+load();
+</script>
+</body>
+</html>

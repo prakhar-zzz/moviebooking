@@ -1,0 +1,72 @@
+/* style.css - shared by all pages */
+:root{
+  --primary:#4a90e2;
+  --accent:#ff9800;
+  --bg:#f4f7fb;
+  --card:#ffffff;
+  --muted:#777;
+}
+
+*{box-sizing:border-box}
+body{
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background:var(--bg);
+  margin:0;
+  color:#222;
+}
+
+.container{
+  width:92%;
+  max-width:980px;
+  margin:30px auto;
+  background:var(--card);
+  border-radius:12px;
+  padding:20px;
+  box-shadow:0 6px 18px rgba(20,20,30,0.06);
+}
+
+.header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:18px;
+}
+.logo{font-weight:700;color:var(--primary);font-size:1.4rem}
+.actions button{
+  background:var(--primary); color:#fff; border:none; padding:8px 12px; border-radius:8px; cursor:pointer;
+}
+.actions button.secondary{ background:#eee; color:#333; margin-left:8px; }
+
+.grid {
+  display:grid;
+  grid-template-columns: repeat(auto-fit,minmax(220px,1fr));
+  gap:14px;
+}
+
+/* Movie card */
+.movie-card{
+  background:#fff;padding:14px;border-radius:10px;border:1px solid #f0f0f0;
+  box-shadow:0 4px 10px rgba(0,0,0,0.02);
+}
+.movie-card h3{margin:0 0 8px 0}
+.movie-card p{margin:6px 0;color:var(--muted);font-size:0.95rem}
+.movie-card .meta{display:flex;justify-content:space-between;align-items:center;margin-top:10px}
+
+/* Seat grid */
+.seat-grid{display:grid;grid-template-columns:repeat(10,44px);gap:10px;justify-content:center;margin:18px 0}
+.seat{
+  width:44px;height:44px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:600;cursor:pointer;border:1px solid #ddd;
+}
+.seat.available{background:#a8e6cf}
+.seat.booked{background:#ff8b94;cursor:not-allowed;color:#fff}
+.seat.selected{background:var(--primary);color:#fff}
+
+/* forms */
+.form { max-width:420px;margin:0 auto; }
+.form input{width:100%;padding:12px;margin:8px 0;border-radius:8px;border:1px solid #ddd}
+.form button{width:100%;padding:12px;border-radius:8px;border:none;background:var(--primary);color:#fff;font-weight:700;cursor:pointer}
+.message{margin-top:10px;font-weight:600;color:var(--muted);text-align:center}
+
+/* ticket */
+.ticket{border:2px dashed var(--primary);padding:18px;border-radius:12px;background:#fff;margin-top:14px;text-align:center}
+.hidden{display:none}
