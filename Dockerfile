@@ -1,13 +1,14 @@
-﻿# Step 1: Build the JAR inside the container
-FROM maven:3.9.6-eclipse-temurin-17 AS build
+# Stage 1: build
+FROM maven:3.9.4-eclipse-temurin-17 AS build
 WORKDIR /app
 COPY pom.xml .
 COPY src ./src
-RUN mvn clean package -DskipTests
+RUN mvn -B -DskipTests clean package
 
-# Step 2: Run the app
-FROM eclipse-temurin:17-jdk
+# Stage 2: runtime
+FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
-COPY --from=build /app/target/movieticket-0.0.1-SNAPSHOT.jar app.jar
+COPY --from=build /app/target/*.jar app.jar
+ENV JAVA_TOOL_OPTIONS="-Xms256m -Xmx512m -XX:+UseContainerSupport"
 EXPOSE 8080
-CMD ["java", "-jar", "app.jar"]
+ENTRYPOINT ["sh","-c","java $JAVA_TOOL_OPTIONS -Djava.security.egd=file:/dev/./urandom -Dserver.port=${PORT:-8080} -jar /app/app.jar"]
